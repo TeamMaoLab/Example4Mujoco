@@ -13,7 +13,7 @@ import time
 def main():
     # 加载模型
     try:
-        model = mujoco.MjModel.from_xml_path(filename='finger_model_levelB.xml')
+        model = mujoco.MjModel.from_xml_path(filename='finger_model_fixed.xml')
         data = mujoco.MjData(model)
         print("✅ 模型加载成功")
         print(f"自由度数量: {model.nq}")
