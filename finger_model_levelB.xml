@@ -1,0 +1,132 @@
+<mujoco model="finger_levelB">
+  <compiler angle="radian" meshdir="meshes" autolimits="true"/>
+  <option gravity="0 0 -9.81" timestep="0.001"/>
+
+  <asset>
+    <mesh name="servo_frame" file="servo_frame.stl"/>
+    <mesh name="servo_sg90" file="servo_sg90.stl"/>
+    <mesh name="finger_base" file="finger_base.stl"/>
+    <mesh name="finger_mid" file="finger_mid.stl"/>
+    <mesh name="fingertip" file="fingertip.stl"/>
+    <mesh name="transmission" file="transmission.stl"/>
+  </asset>
+
+  <default>
+    <joint damping="0.15" armature="0.0002" frictionloss="0.005"/>
+    <geom contype="1" conaffinity="1" margin="0.001" solref="0.002 1" solimp="0.9 0.95 0.001"/>
+    <motor ctrllimited="true" ctrlrange="-1.57 1.57"/>
+    <position ctrllimited="true" ctrlrange="-1.57 1.57" kp="50"/>
+  </default>
+
+  <worldbody>
+    <!-- 舵机框架作为基座 -->
+    <body name="base" pos="0 0 0">
+      <geom name="base_geom" type="mesh" mesh="servo_frame" pos="0 0 0" quat="1 0 0 0" 
+            density="2700" rgba="0.7 0.7 0.7 1"/>
+      
+      <!-- 舵机1 - 安装在框架上 -->
+      <body name="servo1" pos="0.02 0.015 0.01">
+        <geom name="servo1_geom" type="mesh" mesh="servo_sg90" pos="0 0 0" quat="1 0 0 0" 
+              density="1500" rgba="0.8 0.2 0.2 1"/>
+        <joint name="j_servo1" type="hinge" axis="0 1 0" pos="0 0 0" range="-1.57 1.57"/>
+        <site name="s_servo1_out" pos="0.01 0 0" size="0.002" rgba="1 0 0 1"/>
+      </body>
+
+      <!-- 舵机2 - 安装在框架上 -->
+      <body name="servo2" pos="0.02 -0.015 0.01">
+        <geom name="servo2_geom" type="mesh" mesh="servo_sg90" pos="0 0 0" quat="1 0 0 0" 
+              density="1500" rgba="0.2 0.8 0.2 1"/>
+        <joint name="j_servo2" type="hinge" axis="0 1 0" pos="0 0 0" range="-1.57 1.57"/>
+        <site name="s_servo2_out" pos="0.01 0 0" size="0.002" rgba="0 1 0 1"/>
+      </body>
+
+      <!-- 指转部件（基节）- 连接到框架 -->
+      <body name="link_base" pos="0.04 0 0.02">
+        <geom name="link_base_geom" type="mesh" mesh="finger_base" pos="0 0 0" quat="1 0 0 0" 
+              density="1100" rgba="0.5 0.5 0.8 1"/>
+        <joint name="j_base" type="hinge" axis="0 1 0" pos="0 0 0" range="-1.2 1.2"/>
+        <site name="s_base_tip" pos="0.03 0 0" size="0.002" rgba="0 0 1 1"/>
+        
+        <!-- 指柱部件（中节）- 连接到指转 -->
+        <body name="link_mid" pos="0.03 0 0">
+          <geom name="link_mid_geom" type="mesh" mesh="finger_mid" pos="0 0 0" quat="1 0 0 0" 
+                density="1100" rgba="0.8 0.5 0.5 1"/>
+          <joint name="j_mid" type="hinge" axis="0 1 0" pos="0 0 0" range="-1.2 1.2"/>
+          <site name="s_mid_tip" pos="0.025 0 0" size="0.002" rgba="1 0 1 1"/>
+          
+          <!-- 指尖部件（末节）- 连接到指柱 -->
+          <body name="link_tip" pos="0.025 0 0">
+            <geom name="link_tip_geom" type="mesh" mesh="fingertip" pos="0 0 0" quat="1 0 0 0" 
+                  density="1100" rgba="0.9 0.9 0.9 1"/>
+            <joint name="j_tip" type="hinge" axis="0 1 0" pos="0 0 0" range="-1.2 1.2"/>
+            <site name="s_fingertip" pos="0.02 0 0" size="0.002" rgba="1 1 0 1"/>
+          </body>
+        </body>
+      </body>
+
+      <!-- 指传动部件 - 独立body，实现差动功能 -->
+      <body name="link_trans" pos="0.04 0 0">
+        <geom name="link_trans_geom" type="mesh" mesh="transmission" pos="0 0 0" quat="1 0 0 0" 
+              density="1100" rgba="0.5 0.8 0.5 1"/>
+        <joint name="j_trans" type="hinge" axis="0 1 0" pos="0 0 0" range="-1.0 1.0"/>
+        <site name="s_trans_output" pos="0.02 0 0" size="0.002" rgba="0 1 1 1"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- 执行器配置 -->
+  <actuator>
+    <!-- 舵机执行器 -->
+    <position name="a_servo1" joint="j_servo1" kp="50"/>
+    <position name="a_servo2" joint="j_servo2" kp="50"/>
+    
+    <!-- 指传动执行器（简化球头链杆连接） -->
+    <position name="a_trans1" joint="j_trans" kp="40"/>
+    
+    <!-- 指节执行器（用于测试和调试） -->
+    <position name="a_base" joint="j_base" kp="30"/>
+    <position name="a_mid" joint="j_mid" kp="25"/>
+    <position name="a_tip" joint="j_tip" kp="20"/>
+  </actuator>
+
+  <!-- 传感器配置 -->
+  <sensor>
+    <!-- 关节位置传感器 -->
+    <jointpos joint="j_servo1" name="servo1_pos"/>
+    <jointpos joint="j_servo2" name="servo2_pos"/>
+    <jointpos joint="j_base" name="base_pos"/>
+    <jointpos joint="j_mid" name="mid_pos"/>
+    <jointpos joint="j_tip" name="tip_pos"/>
+    <jointpos joint="j_trans" name="trans_pos"/>
+    
+    <!-- 关节速度传感器 -->
+    <jointvel joint="j_servo1" name="servo1_vel"/>
+    <jointvel joint="j_servo2" name="servo2_vel"/>
+    <jointvel joint="j_base" name="base_vel"/>
+    <jointvel joint="j_mid" name="mid_vel"/>
+    <jointvel joint="j_tip" name="tip_vel"/>
+    <jointvel joint="j_trans" name="trans_vel"/>
+    
+    <!-- 指尖力传感器 -->
+    <force site="s_fingertip" name="fingertip_force"/>
+    <torque site="s_fingertip" name="fingertip_torque"/>
+  </sensor>
+
+  <!-- 差动耦合约束（可选，用于实现真实的差动效果） -->
+  <tendon>
+    <spatial name="differential_coupling_1" limited="true" range="0.0 0.1">
+      <site site="s_servo1_out"/>
+      <site site="s_trans_output"/>
+    </spatial>
+    <spatial name="differential_coupling_2" limited="true" range="0.0 0.1">
+      <site site="s_servo2_out"/>
+      <site site="s_trans_output"/>
+    </spatial>
+  </tendon>
+
+  <!-- 可视化设置 -->
+  <visual>
+    <global azimuth="120" elevation="-20"/>
+    <headlight ambient="0.4 0.4 0.4" diffuse="0.8 0.8 0.8" specular="0.3 0.3 0.3"/>
+  </visual>
+</mujoco>
